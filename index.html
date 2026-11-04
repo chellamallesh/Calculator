@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eef1e8">
+  <title>Field Notes Calculator</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #eef1e8;
+      --surface: #fbfcf8;
+      --ink: #172e29;
+      --muted: #78827a;
+      --line: #dce2d8;
+      --green: #245c4b;
+      --green-dark: #193f35;
+      --orange: #e8794f;
+      --orange-pale: #fae7dc;
+      --key: #f3f5ef;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      padding: 48px 20px;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image: linear-gradient(rgba(36, 92, 75, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(36, 92, 75, .045) 1px, transparent 1px);
+      background-size: 32px 32px;
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+    }
+
+    .calculator {
+      width: min(100%, 410px);
+      padding: 25px;
+      border: 1px solid #d5ddd2;
+      border-top: 4px solid var(--green);
+      background: var(--surface);
+      box-shadow: 0 24px 60px rgba(30, 55, 45, .12), 0 3px 8px rgba(30, 55, 45, .05);
+      animation: arrive 420ms ease-out both;
+    }
+
+    .masthead {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 25px;
+      font-weight: 500;
+      line-height: 1.1;
+    }
+
+    .edition, .status, .display-label {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .edition {
+      padding-top: 4px;
+      color: var(--muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .screen {
+      min-height: 151px;
+      margin-bottom: 14px;
+      padding: 18px 19px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      background: var(--ink);
+      color: #f6f7f1;
+    }
+
+    .display-label {
+      color: #a6b8ad;
+    }
+
+    .expression {
+      min-height: 23px;
+      margin: 13px 0 2px;
+      overflow: hidden;
+      color: #b6c4bb;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 15px;
+      text-align: right;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .result {
+      min-height: 43px;
+      overflow: hidden;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 36px;
+      line-height: 1.2;
+      text-align: right;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status-row {
+      min-height: 28px;
+      margin-bottom: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+    }
+
+    .status { font-size: 9px; }
+
+    .status-mark {
+      width: 7px;
+      height: 7px;
+      margin-right: 7px;
+      display: inline-block;
+      border-radius: 50%;
+      background: var(--orange);
+      vertical-align: 1px;
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    button {
+      min-width: 0;
+      aspect-ratio: 1.3;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      background: var(--key);
+      color: var(--ink);
+      font: 500 20px/1 "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      cursor: pointer;
+      transition: background-color 140ms ease, color 140ms ease, transform 140ms ease, border-color 140ms ease;
+      touch-action: manipulation;
+    }
+
+    button:hover { border-color: #c8d3c8; background: #e8eee6; }
+    button:active { transform: translateY(1px) scale(.98); }
+    button:focus-visible { outline: 3px solid #e8794f; outline-offset: 2px; }
+
+    button.utility {
+      background: var(--orange-pale);
+      color: #8d452c;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    button.operator {
+      background: #e3ebe2;
+      color: var(--green-dark);
+      font-size: 21px;
+    }
+
+    button.equals {
+      background: var(--orange);
+      color: #fffaf5;
+      font-size: 23px;
+    }
+
+    button.equals:hover { border-color: #c8633e; background: #d96b43; }
+
+    button.parentheses {
+      grid-column: 1 / -1;
+      min-height: 38px;
+      aspect-ratio: auto;
+    }
+
+    .footer {
+      margin: 17px 1px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10px;
+    }
+
+    .footer strong { color: var(--green); font-weight: 600; }
+
+    @keyframes arrive {
+      from { opacity: 0; transform: translateY(9px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 420px) {
+      body { padding: 20px 14px; }
+      .calculator { padding: 19px; }
+      .keypad { gap: 7px; }
+      button { aspect-ratio: 1.2; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="calculator" aria-label="Calculator">
+    <header class="masthead">
+      <h1 class="brand">Field Notes</h1>
+      <div class="edition">No. 01<br>Everyday arithmetic</div>
+    </header>
+
+    <section class="screen" aria-label="Calculator display">
+      <div class="display-label">Your calculation</div>
+      <div class="expression" id="expression" aria-label="Expression">Ready when you are</div>
+      <output class="result" id="result" aria-live="polite" aria-atomic="true">0</output>
+    </section>
+
+    <div class="status-row">
+      <span class="status"><span class="status-mark" aria-hidden="true"></span><span id="status">Ready</span></span>
+      <span class="status">DEG &nbsp;|&nbsp; 12 DIGITS</span>
+    </div>
+
+    <section class="keypad" aria-label="Calculator keys">
+      <button class="utility" type="button" data-key="AC" aria-label="All clear">AC</button>
+      <button class="utility" type="button" data-key="DEL" aria-label="Delete last character">DEL</button>
+      <button class="utility" type="button" data-key="%" aria-label="Percent">%</button>
+      <button class="operator" type="button" data-key="÷" aria-label="Divide">÷</button>
+
+      <button type="button" data-key="7">7</button>
+      <button type="button" data-key="8">8</button>
+      <button type="button" data-key="9">9</button>
+      <button class="operator" type="button" data-key="×" aria-label="Multiply">×</button>
+
+      <button type="button" data-key="4">4</button>
+      <button type="button" data-key="5">5</button>
+      <button type="button" data-key="6">6</button>
+      <button class="operator" type="button" data-key="-" aria-label="Subtract">−</button>
+
+      <button type="button" data-key="1">1</button>
+      <button type="button" data-key="2">2</button>
+      <button type="button" data-key="3">3</button>
+      <button class="operator" type="button" data-key="+" aria-label="Add">+</button>
+
+      <button class="utility" type="button" data-key="±" aria-label="Toggle sign">±</button>
+      <button type="button" data-key="0">0</button>
+      <button type="button" data-key="." aria-label="Decimal point">.</button>
+      <button class="equals" type="button" data-key="=" aria-label="Calculate">=</button>
+
+      <button class="operator parentheses" type="button" data-key="()" aria-label="Parentheses">( )</button>
+    </section>
+
+    <footer class="footer"><span>ORDER OF OPERATIONS</span><strong>READY</strong></footer>
+  </main>
+
+  <script>
+    const expressionDisplay = document.querySelector("#expression");
+    const resultDisplay = document.querySelector("#result");
+    const statusDisplay = document.querySelector("#status");
+    let expression = "";
+    let lastAnswer = "0";
+    let justEvaluated = false;
+
+    function evaluate(source) {
+      const normalized = source.replace(/[×xX]/g, "*").replace(/÷/g, "/").replace(/\s/g, "");
+      const tokens = normalized.match(/\d+(?:\.\d*)?|\.\d+|[()+\-*/%]/g) || [];
+      if (!tokens.length || tokens.join("") !== normalized) throw new Error("Invalid expression");
+      let position = 0;
+
+      function parseExpression() {
+        let value = parseTerm();
+        while (tokens[position] === "+" || tokens[position] === "-") {
+          const operator = tokens[position++];
+          const right = parseTerm();
+          value = operator === "+" ? value + right : value - right;
+        }
+        return value;
+      }
+
+      function parseTerm() {
+        let value = parseUnary();
+        while (tokens[position] === "*" || tokens[position] === "/") {
+          const operator = tokens[position++];
+          const right = parseUnary();
+          if (operator === "/" && right === 0) throw new Error("Cannot divide by zero");
+          value = operator === "*" ? value * right : value / right;
+        }
+        return value;
+      }
+
+      function parseUnary() {
+        if (tokens[position] === "+") { position++; return parseUnary(); }
+        if (tokens[position] === "-") { position++; return -parseUnary(); }
+        let value = parsePrimary();
+        while (tokens[position] === "%") { position++; value /= 100; }
+        return value;
+      }
+
+      function parsePrimary() {
+        if (tokens[position] === "(") {
+          position++;
+          const value = parseExpression();
+          if (tokens[position++] !== ")") throw new Error("Unclosed parenthesis");
+          return value;
+        }
+        const token = tokens[position++];
+        if (!token || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(token)) throw new Error("Expected a number");
+        return Number(token);
+      }
+
+      const value = parseExpression();
+      if (position !== tokens.length || !Number.isFinite(value)) throw new Error("Invalid result");
+      return value;
+    }
+
+    function formatNumber(value) {
+      if (Object.is(value, -0)) value = 0;
+      return new Intl.NumberFormat(undefined, { maximumSignificantDigits: 12 }).format(value);
+    }
+
+    function render() {
+      expressionDisplay.textContent = expression || "Ready when you are";
+      statusDisplay.textContent = expression ? "Live preview" : "Ready";
+      if (!expression) {
+        resultDisplay.textContent = formatNumber(Number(lastAnswer));
+        return;
+      }
+      try {
+        resultDisplay.textContent = formatNumber(evaluate(expression));
+      } catch {
+        resultDisplay.textContent = justEvaluated ? formatNumber(Number(lastAnswer)) : "";
+      }
+    }
+
+    function currentNumberRange() {
+      const match = expression.match(/(?:\d+\.?\d*|\.\d+)$/);
+      if (!match) return null;
+      return { start: expression.length - match[0].length, value: match[0] };
+    }
+
+    function toggleSign() {
+      const range = currentNumberRange();
+      if (!range) {
+        if (/[+\-×÷*/]$/.test(expression)) {
+          if (/[-]$/.test(expression) && expression.length > 1 && /[+\-×÷*/(]$/.test(expression.slice(0, -1))) {
+            expression = expression.slice(0, -1);
+          } else if (!/[-]$/.test(expression)) {
+            expression += "-";
+          }
+        }
+        return;
+      }
+      const signPosition = range.start - 1;
+      const beforeSign = expression[signPosition - 1];
+      const hasUnarySign = expression[signPosition] === "-" && (signPosition === 0 || "+-×÷*/(".includes(beforeSign));
+      if (hasUnarySign) {
+        expression = expression.slice(0, signPosition) + expression.slice(range.start);
+      } else {
+        expression = expression.slice(0, range.start) + "-" + expression.slice(range.start);
+      }
+    }
+
+    function insertParenthesis() {
+      const opens = (expression.match(/\(/g) || []).length;
+      const closes = (expression.match(/\)/g) || []).length;
+      if (!expression || /[+\-×÷*(]$/.test(expression)) {
+        expression += "(";
+      } else if (opens > closes && /[\d)%]$/.test(expression)) {
+        expression += ")";
+      } else if (/[\d)%]$/.test(expression)) {
+        expression += "×(";
+      }
+    }
+
+    function press(key) {
+      if (key === "AC") {
+        expression = "";
+        lastAnswer = "0";
+        justEvaluated = false;
+      } else if (key === "DEL") {
+        expression = expression.slice(0, -1);
+        justEvaluated = false;
+      } else if (key === "=") {
+        try {
+          const answer = evaluate(expression);
+          lastAnswer = String(Number(answer.toPrecision(12)));
+          expression = lastAnswer;
+          justEvaluated = true;
+        } catch {
+          statusDisplay.textContent = "Check expression";
+        }
+      } else if (key === "±") {
+        if (justEvaluated) { expression = lastAnswer; justEvaluated = false; }
+        toggleSign();
+      } else if (key === "()") {
+        if (justEvaluated) { expression = ""; justEvaluated = false; }
+        insertParenthesis();
+      } else if (key === "%") {
+        if (justEvaluated) justEvaluated = false;
+        if (/[\d)]$/.test(expression)) expression += "%";
+      } else if (key === ".") {
+        if (justEvaluated) { expression = ""; justEvaluated = false; }
+        const range = currentNumberRange();
+        if (!range || !range.value.includes(".")) expression += range ? "." : "0.";
+      } else if (/^\d$/.test(key)) {
+        if (justEvaluated) { expression = ""; justEvaluated = false; }
+        expression += key;
+      } else if (["+", "-", "×", "÷"].includes(key)) {
+        if (justEvaluated) { expression = lastAnswer; justEvaluated = false; }
+        if (!expression && key === "-") expression = "-";
+        else if (expression && /[+×÷]$/.test(expression) && key !== "-") expression = expression.slice(0, -1) + key;
+        else if (expression && !/[+\-×÷(]$/.test(expression)) expression += key;
+        else if (expression && key === "-" && !expression.endsWith("-")) expression += key;
+      }
+      render();
+    }
+
+    document.querySelector(".keypad").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-key]");
+      if (button) press(button.dataset.key);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      const keyMap = { Enter: "=", Backspace: "DEL", Escape: "AC", "/": "÷", "*": "×", x: "×", X: "×" };
+      const key = keyMap[event.key] || event.key;
+      if (/^\d$/.test(key) || [".", "+", "-", "×", "÷", "%", "=", "DEL", "AC", "(", ")"].includes(key)) {
+        event.preventDefault();
+        if (key === "(") press("()");
+        else if (key === ")") {
+          if ((expression.match(/\(/g) || []).length > (expression.match(/\)/g) || []).length) expression += ")";
+          render();
+        } else press(key);
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
